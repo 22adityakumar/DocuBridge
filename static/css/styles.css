@@ -1,0 +1,462 @@
+/* 
+  Hanko-to-Cloud Legacy Pipeline CSS
+  Theme: Modern Japanese Enterprise (Minimalist Blue + White)
+  Designed for Corporate Efficiency, Professional Clarity, and Responsiveness
+*/
+
+:root {
+    /* Color Palette */
+    --bg-base: #f4f7fa;
+    --bg-card: #ffffff;
+    --border-color: #e2e8f0;
+    --border-hover: #cbd5e1;
+    
+    /* Corporate Blues */
+    --primary: #0052cc;
+    --primary-hover: #0040a3;
+    --primary-light: #e6f0fa;
+    --dark-blue: #0f2d59;
+    
+    /* Standard Corporate Feedback Colors */
+    --success: #00875a;
+    --success-light: #e3fcef;
+    --warning: #ffab00;
+    --warning-light: #fffae6;
+    --danger: #de350b;
+    --danger-light: #ffebe6;
+    --info: #00b8d9;
+    --info-light: #e6fcff;
+
+    /* Typography */
+    --font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-base);
+    color: #334155;
+    font-family: var(--font-family);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Typography Helpers */
+.text-dark-blue {
+    color: var(--dark-blue) !important;
+}
+
+.text-xs {
+    font-size: 0.75rem !important;
+}
+
+.text-sm {
+    font-size: 0.85rem !important;
+}
+
+.text-muted {
+    color: #64748b !important;
+}
+
+/* Layout Framework */
+.content-wrapper {
+    flex: 1 0 auto;
+}
+
+/* Top Navigation Bar */
+.brand-icon-wrapper {
+    width: 36px;
+    height: 36px;
+    background-color: var(--primary);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.brand-title {
+    display: block;
+    font-weight: 700;
+    color: var(--dark-blue);
+    font-size: 0.95rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.brand-subtitle {
+    display: block;
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.navbar-nav .nav-link {
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.navbar-nav .nav-english {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.navbar-nav .nav-link.active {
+    color: var(--primary) !important;
+    font-weight: 700;
+    background-color: var(--primary-light);
+}
+
+/* Corporate Buttons */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    font-weight: 500;
+    padding: 0.45rem 1.25rem;
+    border-radius: 4px;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+    font-weight: 500;
+    padding: 0.45rem 1.25rem;
+    border-radius: 4px;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+
+/* Card Panels */
+.card {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.hover-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    border-color: var(--border-hover);
+}
+
+/* Stats Icon & Accents */
+.stats-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-light-blue {
+    background-color: var(--primary-light);
+}
+
+.bg-light-success {
+    background-color: var(--success-light);
+}
+
+.bg-light-info {
+    background-color: var(--info-light);
+}
+
+.bg-light-warning {
+    background-color: var(--warning-light);
+}
+
+/* Document Drag & Drop Upload Zone */
+.upload-zone {
+    border: 2px dashed #cbd5e1;
+    background-color: #fafbfc;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.upload-icon-wrapper {
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+
+.upload-zone:hover .upload-icon-wrapper {
+    transform: translateY(-2px);
+    color: var(--primary);
+}
+
+/* Tables Styling */
+.custom-table-enterprise {
+    width: 100%;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+}
+
+.custom-table-enterprise th {
+    font-weight: 700;
+    color: var(--dark-blue);
+    background-color: #fafbfc;
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    text-align: center;
+}
+
+.custom-table-enterprise td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: #475569;
+    text-align: center;
+}
+
+.custom-table-enterprise tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Custom badges */
+.badge-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-status.success {
+    background-color: var(--success-light);
+    color: var(--success);
+}
+
+.badge-status.pending {
+    background-color: var(--warning-light);
+    color: #b27b00;
+}
+
+.badge-status.failed {
+    background-color: var(--danger-light);
+    color: var(--danger);
+}
+
+.badge-status.info {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+/* Sidebar Timeline Logs */
+.timeline-item {
+    position: relative;
+}
+
+.border-bottom-dashed {
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.border-bottom-dashed:last-child {
+    border-bottom: none;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Footer Status Indicator */
+.system-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot.online {
+    background-color: var(--success);
+    box-shadow: 0 0 8px rgba(0, 135, 90, 0.4);
+}
+
+.footer-links .list-inline-item a:hover {
+    color: var(--primary) !important;
+}
+
+/* CSS for Hero Flow Illustration */
+.hero-visual-card {
+    border: 1px solid var(--border-color);
+}
+
+.step-num {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flow-step {
+    transition: transform 0.2s ease;
+}
+
+.flow-step:hover {
+    transform: translateX(4px);
+    border-color: #cbd5e1 !important;
+}
+
+/* Plotly Responsive Chart wrapper */
+.plotly-chart-container {
+    width: 100%;
+}
+
+/* Print Styling Rules */
+@media print {
+    /* Hide interactive elements, buttons, nav, footer, controls */
+    .navbar, footer, .btn, .card-icon, .upload-zone, #log-search, #log-level-filter, #log-stage-filter, select, label, .pagination, #showing-records-container {
+        display: none !important;
+    }
+    
+    /* Document Setup */
+    @page {
+        size: A4 portrait;
+        margin: 15mm 15mm 20mm 15mm;
+    }
+    
+    body {
+        background-color: #ffffff;
+        color: #1e293b;
+        font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        font-size: 11pt;
+        line-height: 1.5;
+        padding-bottom: 50px;
+    }
+    
+    /* Layout Expansion - Force grids to print vertically stacked at 100% width */
+    .container, .row, .col-lg-8, .col-lg-7, .col-lg-5, .col-lg-4, .col-md-8, .col-md-4, .col-12 {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Card Optimization */
+    .card {
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+        background-color: #ffffff !important;
+        margin-bottom: 25px !important;
+        padding: 15px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    
+    /* Table Styling for Print */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto;
+    }
+    
+    thead {
+        display: table-header-group !important; /* Repeats table header across pages */
+    }
+    
+    tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    
+    th, td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 6pt 8pt !important;
+        font-size: 9.5pt !important;
+    }
+    
+    th {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Badge conversion for monochrome print */
+    .badge-status {
+        background-color: transparent !important;
+        border: 1px solid #64748b !important;
+        color: #0f172a !important;
+        font-weight: bold !important;
+        padding: 1px 4px !important;
+    }
+    
+    .badge-status.success {
+        border-color: #059669 !important;
+        color: #047857 !important;
+    }
+    
+    .badge-status.failed {
+        border-color: #dc2626 !important;
+        color: #b91c1c !important;
+    }
+    
+    .badge-status.pending {
+        border-color: #d97706 !important;
+        color: #b45309 !important;
+    }
+    
+    /* Print Link URLs for S3 Document downloads */
+    a[href^="http"]:after, a[href^="https"]:after {
+        content: " (" attr(href) ")" !important;
+        font-size: 8pt !important;
+        color: #475569 !important;
+        word-break: break-all !important;
+    }
+    
+    a[href^="#"]:after, a[href^="javascript:"]:after {
+        content: "" !important;
+    }
+    
+    /* Page Numbering */
+    body {
+        counter-reset: page;
+    }
+    
+    .page-number-placeholder:after {
+        content: counter(page) !important;
+    }
+}

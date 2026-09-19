@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Home | DocuBridge{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row align-items-center mb-5 hero-section py-4">
+    <div class="col-lg-7 text-center text-lg-start mb-4 mb-lg-0">
+        <span class="badge bg-soft-primary text-primary px-3 py-2 rounded mb-3" data-translate="home-hero-badge">DocuBridge Legacy Pipeline</span>
+        <h1 class="display-5 fw-bold text-dark-blue mb-3" data-translate="home-hero-title">
+            レガシーな業務文書を、<br>
+            スマートにクラウド統合。
+        </h1>
+        <p class="lead text-muted mb-4" data-translate="home-hero-desc">
+            DocuBridge is an enterprise-grade document ingestion pipeline that uploads, archives, and verifies legacy physical documents.
+        </p>
+        <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start">
+            <a href="{{ url_for('dashboard.upload_page') }}" class="btn btn-primary btn-lg px-4 py-3 fw-medium" data-translate="home-hero-btn-upload">
+                <i class="fa-solid fa-file-arrow-up me-2"></i> 文書をアップロードする
+            </a>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-primary btn-lg px-4 py-3 fw-medium" data-translate="home-hero-btn-dashboard">
+                ダッシュボードを表示 <i class="fa-solid fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-5 text-center">
+        <div class="hero-visual-card p-4 bg-white border rounded shadow-sm">
+            <div class="visual-flow d-flex flex-column gap-3">
+                <div class="flow-step d-flex align-items-center p-3 border rounded bg-light">
+                    <div class="step-num bg-primary text-white rounded-circle me-3">1</div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold" data-translate="home-step1-title">紙面・押印書類の読込</h6>
+                        <span class="small text-muted" data-translate="home-step1-desc">PDF / JPEG / PNG アップロード</span>
+                    </div>
+                </div>
+                <div class="flow-step d-flex align-items-center p-3 border rounded bg-light">
+                    <div class="step-num bg-primary text-white rounded-circle me-3">2</div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold" data-translate="home-step2-title">S3 セキュリティ保管</h6>
+                        <span class="small text-muted" data-translate="home-step2-desc">AWS クラウドへの自動格納</span>
+                    </div>
+                </div>
+                <div class="flow-step d-flex align-items-center p-3 border rounded bg-light">
+                    <div class="step-num bg-primary text-white rounded-circle me-3">3</div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold" data-translate="home-step3-title">Gemini AI 解析抽出</h6>
+                        <span class="small text-muted" data-translate="home-step3-desc">印影判定・メタデータ構造化</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 border rounded shadow-sm p-4 text-center hover-card">
+            <div class="card-icon mb-3 bg-light text-primary mx-auto">
+                <i class="fa-solid fa-shield-halved fa-2x"></i>
+            </div>
+            <h5 class="fw-bold mb-3 text-dark-blue" data-translate="home-feature1-title">高信頼セキュア設計</h5>
+            <p class="text-muted small mb-0" data-translate="home-feature1-desc">
+                アップロードされたすべての機密文書は、業界水準の暗号化を適用したAWS S3プライベートバケットへ即時に安全格納されます。
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border rounded shadow-sm p-4 text-center hover-card">
+            <div class="card-icon mb-3 bg-light text-primary mx-auto">
+                <i class="fa-solid fa-microchip fa-2x"></i>
+            </div>
+            <h5 class="fw-bold mb-3 text-dark-blue" data-translate="home-feature2-title">Gemini 2.5 Flash 搭載</h5>
+            <p class="text-muted small mb-0" data-translate="home-feature2-desc">
+                Googleの次世代軽量高速モデルを活用し、日本語文書の文字起こしや印影の確認、重要キー情報の自動分類を圧倒的なレスポンスで実行します。
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border rounded shadow-sm p-4 text-center hover-card">
+            <div class="card-icon mb-3 bg-light text-primary mx-auto">
+                <i class="fa-solid fa-list-check fa-2x"></i>
+            </div>
+            <h5 class="fw-bold mb-3 text-dark-blue" data-translate="home-feature3-title">トレーサビリティの徹底</h5>
+            <p class="text-muted small mb-0" data-translate="home-feature3-desc">
+                ファイルの取り込みからデータベース格納までの工程をフルログ。全ての処理履歴をリアルタイムに監査ログから検索できます。
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Operational Summary Banner -->
+<div class="bg-light border rounded p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <div class="text-center text-md-start">
+        <h5 class="fw-bold mb-1 text-dark-blue" data-translate="home-status-title"><i class="fa-solid fa-circle-check text-success me-2"></i>システム稼働ステータス正常</h5>
+        <p class="text-muted small mb-0" data-translate="home-status-desc">現在すべてのAPIサービス、データベース、クラウド連携機能は健全に作動しています。</p>
+    </div>
+    <div>
+        <a href="{{ url_for('dashboard.audit_logs') }}" class="btn btn-outline-secondary btn-sm fw-medium" data-translate="home-status-btn">
+            システム稼働履歴（監査ログ）を確認する
+        </a>
+    </div>
+</div>
+{% endblock %}

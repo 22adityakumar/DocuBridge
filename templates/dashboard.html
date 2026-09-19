@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | DocuBridge{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h2 class="fw-bold text-dark-blue mb-1" data-translate="dash-header">エグゼクティブ・ダッシュボード</h2>
+        <p class="text-muted small mb-0" data-translate="dash-subheader">Gemini AI が抽出した請求データ、月次支出額、取引先ランキング、および押印コンプライアンス指標を可視化します。</p>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="text-end d-none d-sm-block">
+            <span class="badge bg-soft-success text-success px-3 py-2 fw-medium rounded-pill" data-translate="dash-refreshing">
+                <i class="fa-solid fa-rotate fa-spin me-1"></i> 自動更新中 (30秒間隔)
+            </span>
+            <span class="text-xs text-muted d-block mt-1" id="last-updated-time">最終更新: --:--:--</span>
+        </div>
+        <a href="{{ url_for('dashboard.upload_page') }}" class="btn btn-primary btn-sm px-3 fw-medium" data-translate="dash-btn-upload">
+            <i class="fa-solid fa-file-arrow-up me-1"></i> 文書アップロード
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards Row -->
+<div class="row g-4 mb-4">
+    <!-- Invoice Count Card -->
+    <div class="col-lg-3 col-sm-6">
+        <div class="card border rounded shadow-sm p-3 bg-white hover-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-medium" data-translate="dash-kpi1-title">請求書 処理総数</span>
+                    <h2 class="fw-bold text-dark-blue mt-1 mb-0" id="stat-total-invoices">120</h2>
+                </div>
+                <div class="stats-icon bg-light-blue text-primary">
+                    <i class="fa-solid fa-receipt fa-lg"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-xs text-muted" data-translate="dash-kpi1-desc">
+                総アップロード書類数
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completed Processing Card -->
+    <div class="col-lg-3 col-sm-6">
+        <div class="card border rounded shadow-sm p-3 bg-white hover-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-medium" data-translate="dash-kpi2-title">データ抽出完了</span>
+                    <h2 class="fw-bold text-success mt-1 mb-0" id="stat-completed-invoices">115</h2>
+                </div>
+                <div class="stats-icon bg-light-success text-success">
+                    <i class="fa-solid fa-circle-check fa-lg"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-xs text-muted">
+                <span data-translate="dash-kpi2-desc">正常抽出完了率: </span><span class="fw-bold text-dark-blue" id="stat-completed-percent">95.8%</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Average Confidence Card -->
+    <div class="col-lg-3 col-sm-6">
+        <div class="card border rounded shadow-sm p-3 bg-white hover-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-medium" data-translate="dash-kpi3-title">平均 AI 信頼度スコア</span>
+                    <h2 class="fw-bold text-info mt-1 mb-0" id="stat-avg-confidence">96.5%</h2>
+                </div>
+                <div class="stats-icon bg-light-info text-info">
+                    <i class="fa-solid fa-brain fa-lg"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-xs text-muted" data-translate="dash-kpi3-desc">
+                Gemini 2.5 Flash Vision 抽出精度
+            </div>
+        </div>
+    </div>
+    
+    <!-- Compliance (Hanko present) Card -->
+    <div class="col-lg-3 col-sm-6">
+        <div class="card border rounded shadow-sm p-3 bg-white hover-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-medium" data-translate="dash-kpi4-title">Authorization Rate</span>
+                    <h2 class="fw-bold text-warning mt-1 mb-0" id="stat-compliance-rate">92.5%</h2>
+                </div>
+                <div class="stats-icon bg-light-warning text-warning">
+                    <i class="fa-solid fa-signature fa-lg"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-xs text-muted" data-translate="dash-kpi4-desc">
+                Ratio of verified documents
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Monthly Spending Chart -->
+    <div class="col-lg-7">
+        <div class="card border rounded shadow-sm p-4 bg-white h-100">
+            <h5 class="fw-bold text-dark-blue mb-3" data-translate="dash-chart1-title">
+                <i class="fa-solid fa-chart-line text-primary me-2"></i>月次支出トレンド (Monthly Spending)
+            </h5>
+            <div id="chart-monthly-spending" class="plotly-chart-container" style="height: 280px;"></div>
+        </div>
+    </div>
+    
+    <!-- Vendor Spending Ranking Chart -->
+    <div class="col-lg-5">
+        <div class="card border rounded shadow-sm p-4 bg-white h-100">
+            <h5 class="fw-bold text-dark-blue mb-3" data-translate="dash-chart2-title">
+                <i class="fa-solid fa-chart-bar text-primary me-2"></i>取引先支出ランキング (Top Vendors)
+            </h5>
+            <div id="chart-vendor-ranking" class="plotly-chart-container" style="height: 280px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Hanko Compliance Distribution Chart -->
+    <div class="col-lg-4">
+        <div class="card border rounded shadow-sm p-4 bg-white h-100">
+            <h5 class="fw-bold text-dark-blue mb-3" data-translate="dash-chart3-title">
+                <i class="fa-solid fa-circle-exclamation text-primary me-2"></i>印影押印ステータス (Compliance)
+            </h5>
+            <div id="chart-compliance-distribution" class="plotly-chart-container" style="height: 240px;"></div>
+        </div>
+    </div>
+    
+    <!-- Recent Ingested Invoices Table -->
+    <div class="col-lg-8">
+        <div class="card border rounded shadow-sm p-4 bg-white h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark-blue mb-0" data-translate="dash-table-title">
+                    <i class="fa-solid fa-file-invoice text-primary me-2"></i>最近アップロードされた書類
+                </h5>
+                <a href="{{ url_for('dashboard.upload_page') }}" class="btn btn-outline-primary btn-sm fw-medium" data-translate="dash-btn-view-all">全一覧を表示</a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table custom-table-enterprise align-middle">
+                    <thead>
+                        <tr>
+                            <th data-translate="upload-th-id">文書ID</th>
+                            <th data-translate="upload-th-name">ファイル名</th>
+                            <th data-translate="upload-th-time">登録日時</th>
+                            <th data-translate="upload-th-s3">S3 status</th>
+                            <th data-translate="upload-th-status">パイプライン状態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="document-table-body">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4" data-translate="status-loading-recent">
+                                <i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> 最新データを読み込み中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Flag to bind script executions in main.js
+    const isExecutiveDashboard = true;
+</script>
+{% endblock %}

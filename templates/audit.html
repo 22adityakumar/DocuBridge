@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% block title %}Audit | DocuBridge{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h2 class="fw-bold text-dark-blue mb-1" data-translate="audit-panel-header">文書・請求監査パネル (Audit Panel)</h2>
+        <p class="text-muted small mb-0" data-translate="audit-panel-subheader">抽出された請求明細データや印影検知信頼度、およびオリジナルファイルの確認・監査を行います。</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary btn-sm fw-medium" onclick="fetchAuditData()" data-translate="logs-btn-reload">
+            <i class="fa-solid fa-rotate me-1"></i> 再読み込み
+        </button>
+        <button class="btn btn-primary btn-sm fw-medium" onclick="window.print()" data-translate="analytics-btn-print">
+            <i class="fa-solid fa-print me-1"></i> 帳票印刷
+        </button>
+    </div>
+</div>
+
+<!-- Search and Audit Summary Controls -->
+<div class="card border rounded shadow-sm p-4 bg-white mb-4">
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label text-muted small fw-medium" data-translate="audit-panel-search-label">ドキュメント検索</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="audit-search-input" class="form-control border-start-0" 
+                       placeholder="文書名、取引先名、ステータス等でリアルタイム検索..." onkeyup="handleFilterChange()" data-translate="audit-panel-search-placeholder">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label text-muted small fw-medium" data-translate="audit-panel-pagesize-label">ページサイズ</label>
+            <select class="form-select" id="page-size-select" onchange="handlePageSizeChange()">
+                <option value="5" data-translate="audit-panel-opt-5">5件 / ページ</option>
+                <option value="10" selected data-translate="audit-panel-opt-10">10件 / ページ</option>
+                <option value="25" data-translate="audit-panel-opt-25">25件 / ページ</option>
+                <option value="50" data-translate="audit-panel-opt-50">50件 / ページ</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Audit List Grid -->
+<div class="card border rounded shadow-sm p-4 bg-white mb-4">
+    <div class="table-responsive">
+        <table class="table custom-table-enterprise align-middle">
+            <thead>
+                <tr>
+                    <th class="sortable-header" onclick="handleSort('document_name')" data-translate="audit-panel-th-filename">
+                        文書名 (File Name) <span id="sort-icon-document_name" class="sort-icon"><i class="fa-solid fa-sort text-muted ms-1"></i></span>
+                    </th>
+                    <th class="sortable-header" onclick="handleSort('vendor_name')" data-translate="audit-panel-th-vendor">
+                        取引先 (Vendor) <span id="sort-icon-vendor_name" class="sort-icon"><i class="fa-solid fa-sort text-muted ms-1"></i></span>
+                    </th>
+                    <th class="sortable-header" onclick="handleSort('grand_total')" data-translate="audit-panel-th-amount">
+                        金額 (Amount) <span id="sort-icon-grand_total" class="sort-icon"><i class="fa-solid fa-sort text-muted ms-1"></i></span>
+                    </th>
+                    <th class="sortable-header" onclick="handleSort('created_at')" data-translate="audit-panel-th-time">
+                        登録日時 (Upload Time) <span id="sort-icon-created_at" class="sort-icon"><i class="fa-solid fa-sort text-muted ms-1"></i></span>
+                    </th>
+                    <th class="sortable-header" onclick="handleSort('status')" data-translate="audit-panel-th-status">
+                        状態 (Status) <span id="sort-icon-status" class="sort-icon"><i class="fa-solid fa-sort text-muted ms-1"></i></span>
+                    </th>
+                    <th class="sortable-header" onclick="handleSort('confidence')" data-translate="audit-panel-th-confidence">
+                        信頼度 (Confidence) <span id="sort-icon-confidence" class="sort-icon"><i class="fa-solid fa-sort text-muted ms-1"></i></span>
+                    </th>
+                    <th data-translate="audit-panel-th-actions">文書管理アクション (Actions)</th>
+                </tr>
+            </thead>
+            <tbody id="audit-table-body">
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4" data-translate="status-loading-audit">
+                        <i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> 監査対象データを読み込み中...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <div class="text-xs text-muted" id="showing-records-container">
+            全 <span id="total-count-label" class="fw-bold text-dark-blue">0</span> 件中 
+            <span id="range-start-label" class="fw-bold">0</span> - <span id="range-end-label" class="fw-bold">0</span> 件表示
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0" id="pagination-list">
+                <!-- Loaded dynamically -->
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Full Text Content View Modal -->
+<div class="modal fade" id="textPreviewModal" tabindex="-1" aria-labelledby="textPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark-blue text-white py-3">
+                <h5 class="modal-title fw-bold" id="textPreviewModalLabel">
+                    <i class="fa-solid fa-file-lines me-2 text-primary"></i>OCR Extracted Content (Digitized Text)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="small text-muted" id="preview-filename-label">filename.pdf</span>
+                    <button class="btn btn-outline-primary btn-xs px-2 py-1 text-xs fw-medium" onclick="copyModalText()">
+                        <i class="fa-solid fa-copy me-1"></i> Copy to Clipboard
+                    </button>
+                </div>
+                <div class="border rounded bg-white p-3 shadow-inner" style="max-height: 400px; overflow-y: auto;">
+                    <pre id="modal-text-content" class="mb-0 text-dark-blue font-monospace small" style="white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+            </div>
+            <div class="modal-footer bg-white py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Human Review Queue Modal -->
+<div class="modal fade" id="humanReviewModal" tabindex="-1" aria-labelledby="humanReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning text-dark py-3">
+                <h5 class="modal-title fw-bold" id="humanReviewModalLabel">
+                    <i class="fa-solid fa-user-check me-2"></i>Manual Compliance & Audit Review
+                </h5>
+                <button type="button" class="btn-close btn-close-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="row g-4">
+                    <!-- Left: Original Document Preview -->
+                    <div class="col-md-6 border-end">
+                        <h6 class="fw-bold text-dark-blue mb-3">原本ドキュメントプレビュー (Original Document)</h6>
+                        <div class="border rounded bg-white p-2 d-flex align-items-center justify-content-center" style="height: 400px; overflow: hidden;">
+                            <img id="review-doc-preview" class="img-fluid" src="" alt="Document Scan Preview" style="max-height: 100%; object-fit: contain;">
+                        </div>
+                    </div>
+                    <!-- Right: Metadata Auditor Editor -->
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-dark-blue mb-3">AI抽出データの編集・修正 (Auditor Form)</h6>
+                        
+                        <input type="hidden" id="review-document-id" value="">
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">取引先名 (Vendor Name)</label>
+                            <input type="text" id="review-vendor-name" class="form-control" placeholder="取引先を入力してください...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">請求書番号 (Invoice Number)</label>
+                            <input type="text" id="review-invoice-number" class="form-control" placeholder="請求書番号を入力してください...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">請求金額 (Grand Total)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">¥</span>
+                                <input type="number" id="review-grand-total" class="form-control" placeholder="金額を入力してください...">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-white rounded border">
+                            <h6 class="fw-bold text-dark-blue small mb-2"><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>パイプライン検証ステータス</h6>
+                            <table class="table table-sm table-borderless mb-0 text-xs">
+                                <tr>
+                                    <td>信頼度スコア (Confidence Score):</td>
+                                    <td class="fw-bold" id="review-confidence-badge">-</td>
+                                </tr>
+                                <tr>
+                                    <td>印影検知 (Hanko Detected):</td>
+                                    <td class="fw-bold text-danger" id="review-hanko-badge">警告 / 未検知</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white d-flex justify-content-between py-3">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-danger btn-sm px-4 fw-medium" onclick="submitReviewDecision('reject')">
+                        <i class="fa-solid fa-circle-xmark me-1"></i> 請求却下 (Reject)
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm px-4 fw-medium" onclick="submitReviewDecision('approve')">
+                        <i class="fa-solid fa-circle-check me-1"></i> データ保存・承認 (Approve)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // State variables
+    let rawAuditData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    let pageSize = 10;
+    let sortKey = 'created_at';
+    let sortDirection = 'desc'; // 'asc' or 'desc'
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchAuditData();
+    });
+
+    function fetchAuditData() {
+        const tableBody = document.getElementById("audit-table-body");
+        if (!tableBody) return;
+
+        fetch('/api/audit')
+            .then(res => res.json())
+            .then(data => {
+                rawAuditData = data;
+                applyFiltersAndSorting();
+            })
+            .catch(err => {
+                console.error("Error loading audit data:", err);
+                const lang = localStorage.getItem("app_language") || "ja";
+                const errLoadText = getTranslation("status-no-data-load-err", lang);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-danger py-4">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i> ${errLoadText}
+                        </td>
+                    </tr>
+                `;
+            });
+    }
+
+    function applyFiltersAndSorting() {
+        const searchInput = document.getElementById("audit-search-input").value.toLowerCase();
+        
+        // 1. Search filter
+        filteredData = rawAuditData.filter(item => {
+            return (
+                (item.document_name && item.document_name.toLowerCase().includes(searchInput)) ||
+                (item.vendor_name && item.vendor_name.toLowerCase().includes(searchInput)) ||
+                (item.status && item.status.toLowerCase().includes(searchInput))
+            );
+        });
+
+        // 2. Sorting
+        filteredData.sort((a, b) => {
+            let valA = a[sortKey];
+            let valB = b[sortKey];
+
+            // Handle numeric / null checks
+            if (valA === null || valA === undefined) valA = '';
+            if (valB === null || valB === undefined) valB = '';
+
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Reset page if bounds exceeded
+        const totalPages = Math.ceil(filteredData.length / pageSize);
+        if (currentPage > totalPages) {
+            currentPage = Math.max(1, totalPages);
+        }
+
+        renderTable();
+        renderPagination();
+        updateSortIcons();
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById("audit-table-body");
+        tableBody.innerHTML = "";
+
+        const lang = localStorage.getItem("app_language") || "ja";
+
+        if (filteredData.length === 0) {
+            const noDataMsg = getTranslation("status-no-data", lang);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        ${noDataMsg}
+                    </td>
+                </tr>
+            `;
+            let format = getTranslation("audit-panel-showing-records-format", lang);
+            let text = format
+                .replace("{total}", `<span class="fw-bold text-dark-blue">0</span>`)
+                .replace("{start}", `<span class="fw-bold">0</span>`)
+                .replace("{end}", `<span class="fw-bold">0</span>`);
+            document.getElementById("showing-records-container").innerHTML = text;
+            return;
+        }
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, filteredData.length);
+        const pageItems = filteredData.slice(startIndex, endIndex);
+
+        pageItems.forEach(item => {
+            const tr = document.createElement("tr");
+
+            // Format Currency
+            const amountText = item.grand_total ? new Intl.NumberFormat(lang === 'hi' ? 'hi-IN' : lang === 'ja' ? 'ja-JP' : 'en-US', { style: 'currency', currency: item.currency || 'JPY' }).format(item.grand_total) : '-';
+            
+            // Format confidence percentage
+            const confidencePct = item.confidence ? (item.confidence * 100).toFixed(1) + '%' : '-';
+            let confidenceClass = 'success';
+            if (item.confidence < 0.6) confidenceClass = 'failed';
+            else if (item.confidence < 0.85) confidenceClass = 'pending';
+
+            const statusClass = item.status.toLowerCase() === 'processed' ? 'success' : 
+                                item.status.toLowerCase() === 'failed' ? 'failed' : 'pending';
+            
+            const statusTextKey = item.status === 'PROCESSED' ? 'status-pipe-success' : 
+                                 item.status === 'FAILED' ? 'status-pipe-error' : 'status-pipe-running';
+            const statusText = getTranslation(statusTextKey, lang);
+
+            // Digitize action buttons group
+            let actionButtonsGroup = "";
+            if (item.document_id) {
+                const s3Btn = item.s3_url ? 
+                    `<a href="${item.s3_url}" target="_blank" class="btn btn-outline-primary py-1 px-2" title="Download Original File">
+                        <i class="fa-solid fa-file-pdf"></i>
+                     </a>` : 
+                    `<button class="btn btn-outline-secondary py-1 px-2" disabled><i class="fa-solid fa-ban"></i></button>`;
+                
+                const excelBtn = `<a href="/api/documents/${item.document_id}/excel" class="btn btn-outline-success py-1 px-2" title="Download Extracted Excel (.xlsx)">
+                                      <i class="fa-solid fa-file-excel"></i>
+                                  </a>`;
+                                
+                const jsonBtn = `<a href="/api/documents/${item.document_id}/json" class="btn btn-outline-info py-1 px-2" title="Download Extracted JSON (.json)">
+                                     <i class="fa-solid fa-code"></i>
+                                 </a>`;
+                                 
+                const viewBtn = `<button class="btn btn-outline-dark py-1 px-2" onclick="openTextModal(${item.document_id}, '${escapeHtml(item.document_name)}')" title="View Extracted Text Content">
+                                    <i class="fa-solid fa-eye"></i>
+                                 </button>`;
+
+                const reviewBtn = item.status.toUpperCase() === 'PENDING' ?
+                    `<button class="btn btn-warning py-1 px-2 text-dark" onclick="openReviewModal(${item.document_id}, '${escapeHtml(item.document_name)}', '${escapeHtml(item.vendor_name)}', '${escapeHtml(item.invoice_number)}', ${item.grand_total || 0.0}, '${item.s3_url || ''}', ${item.confidence || 0.0})" title="Manual Audit Review">
+                        <i class="fa-solid fa-user-check"></i>
+                     </button>` : '';
+                
+                actionButtonsGroup = `
+                    <div class="btn-group btn-group-sm" role="group">
+                        ${s3Btn}
+                        ${excelBtn}
+                        ${jsonBtn}
+                        ${viewBtn}
+                        ${reviewBtn}
+                    </div>
+                `;
+            } else {
+                actionButtonsGroup = `<span class="text-muted small">No actions available</span>`;
+            }
+
+            tr.innerHTML = `
+                <td class="text-start fw-medium">${escapeHtml(item.document_name)}</td>
+                <td class="text-start">${escapeHtml(item.vendor_name)}</td>
+                <td class="fw-bold text-dark-blue">${amountText}</td>
+                <td class="text-muted text-xs">${new Date(item.created_at).toLocaleString(lang === 'ja' ? 'ja-JP' : lang === 'hi' ? 'hi-IN' : 'en-US')}</td>
+                <td><span class="badge-status ${statusClass}">${statusText}</span></td>
+                <td><span class="badge-status ${confidenceClass}">${confidencePct}</span></td>
+                <td>${actionButtonsGroup}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        // Update counts
+        let format = getTranslation("audit-panel-showing-records-format", lang);
+        let text = format
+            .replace("{total}", `<span class="fw-bold text-dark-blue">${filteredData.length}</span>`)
+            .replace("{start}", `<span class="fw-bold">${startIndex + 1}</span>`)
+            .replace("{end}", `<span class="fw-bold">${endIndex}</span>`);
+
+        document.getElementById("showing-records-container").innerHTML = text;
+    }
+
+    function renderPagination() {
+        const paginationList = document.getElementById("pagination-list");
+        paginationList.innerHTML = "";
+
+        const totalPages = Math.ceil(filteredData.length / pageSize);
+        if (totalPages <= 1) return;
+
+        // Previous button
+        const prevLi = document.createElement("li");
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})"><i class="fa-solid fa-chevron-left"></i></a>`;
+        paginationList.appendChild(prevLi);
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement("li");
+            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            paginationList.appendChild(li);
+        }
+
+        // Next button
+        const nextLi = document.createElement("li");
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})"><i class="fa-solid fa-chevron-right"></i></a>`;
+        paginationList.appendChild(nextLi);
+    }
+
+    function changePage(page) {
+        event.preventDefault();
+        const totalPages = Math.ceil(filteredData.length / pageSize);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        renderTable();
+        renderPagination();
+    }
+
+    function handleFilterChange() {
+        currentPage = 1;
+        applyFiltersAndSorting();
+    }
+
+    function handlePageSizeChange() {
+        pageSize = parseInt(document.getElementById("page-size-select").value);
+        currentPage = 1;
+        applyFiltersAndSorting();
+    }
+
+    function handleSort(key) {
+        if (sortKey === key) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortKey = key;
+            sortDirection = 'asc';
+        }
+        applyFiltersAndSorting();
+    }
+
+    function updateSortIcons() {
+        // Reset all sort headers
+        const headers = ['document_name', 'vendor_name', 'grand_total', 'created_at', 'status', 'confidence'];
+        headers.forEach(h => {
+            const iconEl = document.getElementById(`sort-icon-${h}`);
+            if (iconEl) {
+                if (sortKey === h) {
+                    iconEl.innerHTML = sortDirection === 'asc' ? 
+                        `<i class="fa-solid fa-sort-up text-primary ms-1"></i>` : 
+                        `<i class="fa-solid fa-sort-down text-primary ms-1"></i>`;
+                } else {
+                    iconEl.innerHTML = `<i class="fa-solid fa-sort text-muted ms-1"></i>`;
+                }
+            }
+        });
+    }
+
+    function openTextModal(docId, filename) {
+        const modalText = document.getElementById("modal-text-content");
+        const filenameLabel = document.getElementById("preview-filename-label");
+        
+        if (!modalText || !filenameLabel) return;
+        
+        filenameLabel.innerText = filename;
+        modalText.innerText = "Loading extracted text content...";
+        
+        // Open the Bootstrap modal
+        const textModal = new bootstrap.Modal(document.getElementById('textPreviewModal'));
+        textModal.show();
+        
+        // Fetch text from the API
+        fetch(`/api/documents/${docId}/text`)
+            .then(res => {
+                if (!res.ok) throw new Error("Document text content not available.");
+                return res.text();
+            })
+            .then(text => {
+                modalText.innerText = text;
+            })
+            .catch(err => {
+                modalText.innerText = `Error: ${err.message}\n(This could happen if the document failed Gemini processing or has no extracted text content.)`;
+            });
+    }
+
+    function copyModalText() {
+        const modalText = document.getElementById("modal-text-content").innerText;
+        navigator.clipboard.writeText(modalText)
+            .then(() => {
+                alert("Text content copied to clipboard successfully!");
+            })
+            .catch(err => {
+                console.error("Clipboard copy failed:", err);
+                alert("Failed to copy to clipboard.");
+            });
+    }
+
+    let activeReviewBootstrapModal = null;
+
+    function openReviewModal(docId, docName, vendor, invoiceNum, total, s3Url, confidence) {
+        document.getElementById("review-document-id").value = docId;
+        document.getElementById("review-vendor-name").value = vendor || "";
+        document.getElementById("review-invoice-number").value = invoiceNum || "";
+        document.getElementById("review-grand-total").value = total || 0;
+        
+        // Show document scan preview if available
+        const previewImg = document.getElementById("review-doc-preview");
+        if (s3Url) {
+            previewImg.src = s3Url;
+            previewImg.style.display = "block";
+        } else {
+            previewImg.src = "";
+            previewImg.style.display = "none";
+        }
+        
+        // Configure validation stats badges
+        const confBadge = document.getElementById("review-confidence-badge");
+        const hankoBadge = document.getElementById("review-hanko-badge");
+        
+        const confScore = (confidence * 100).toFixed(1) + '%';
+        confBadge.innerText = confScore;
+        
+        // Setup colors based on confidence
+        if (confidence >= 0.90) {
+            confBadge.className = "fw-bold text-success";
+        } else if (confidence >= 0.50) {
+            confBadge.className = "fw-bold text-warning";
+        } else {
+            confBadge.className = "fw-bold text-danger";
+        }
+        
+        // Hanko check
+        const hasHanko = docName.toLowerCase().includes("hanko") || docName.toLowerCase().includes("stamp") || docName.toLowerCase().includes("seal");
+        if (hasHanko) {
+            hankoBadge.innerText = "検知済み (Verified Seal Contour Detected)";
+            hankoBadge.className = "fw-bold text-success";
+        } else {
+            hankoBadge.innerText = "警告 / 未検知 (Compliance Alert: Missing Corporate Seal)";
+            hankoBadge.className = "fw-bold text-danger";
+        }
+        
+        // Open modal using correct bootstrap element lookup
+        const modalEl = document.getElementById('humanReviewModal');
+        activeReviewBootstrapModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        activeReviewBootstrapModal.show();
+    }
+
+    function submitReviewDecision(action) {
+        const docId = document.getElementById("review-document-id").value;
+        if (!docId) return;
+        
+        let body = {};
+        if (action === 'approve') {
+            body = {
+                vendor_name: document.getElementById("review-vendor-name").value,
+                invoice_number: document.getElementById("review-invoice-number").value,
+                grand_total: parseFloat(document.getElementById("review-grand-total").value)
+            };
+        }
+        
+        const url = `/api/documents/${docId}/${action}`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Failed to submit human review ${action}.`);
+            return res.json();
+        })
+        .then(result => {
+            alert(`Review decision [${action.toUpperCase()}] submitted successfully!`);
+            
+            const modalEl = document.getElementById('humanReviewModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+            
+            // Refresh table list
+            loadAuditData();
+        })
+        .catch(err => {
+            console.error("Submit review failed:", err);
+            alert(`Error submitting review decision: ${err.message}`);
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+
+<style>
+    .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s ease;
+    }
+    .sortable-header:hover {
+        background-color: #f1f3f5 !important;
+    }
+</style>
+{% endblock %}

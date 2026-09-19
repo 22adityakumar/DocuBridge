@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Document | DocuBridge{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Document Upload Card -->
+    <div class="col-lg-7">
+        <div class="card border rounded shadow-sm p-4 h-100 bg-white">
+            <h4 class="fw-bold text-dark-blue mb-2" data-translate="upload-header">文書ファイルのアップロード</h4>
+            <p class="text-muted small mb-4" data-translate="upload-desc">
+                処理対象のファイル（契約書スキャン、注文書、各種社内紙面データのPDFや画像）をドロップするか選択してください。
+            </p>
+
+            <div class="upload-zone border rounded p-5 text-center cursor-pointer bg-light-blue" id="drop-zone">
+                <input type="file" id="file-input" class="d-none" accept=".pdf,.png,.jpg,.jpeg">
+                <div class="upload-icon-wrapper mb-3 text-primary">
+                    <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
+                </div>
+                <h5 class="fw-bold text-dark-blue mb-1" data-translate="upload-zone-title">ここにファイルをドラッグ＆ドロップ</h5>
+                <p class="text-muted small mb-3" data-translate="upload-zone-or">または</p>
+                <button type="button" class="btn btn-primary px-4 fw-medium" onclick="document.getElementById('file-input').click()" data-translate="upload-zone-btn">
+                    ローカルファイルを選択
+                </button>
+                <p class="text-muted text-xs mt-3 mb-0" data-translate="upload-zone-format">PDF、PNG、JPGファイルに対応（最大20MB）</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Guidelines -->
+    <div class="col-lg-5">
+        <div class="card border rounded shadow-sm p-4 h-100 bg-white">
+            <h5 class="fw-bold text-dark-blue mb-3" data-translate="upload-spec-title"><i class="fa-solid fa-circle-info text-primary me-2"></i>アップロード要領と仕様</h5>
+            
+            <div class="guideline-list d-flex flex-column gap-3">
+                <div class="guideline-item d-flex">
+                    <i class="fa-solid fa-check text-success me-2 mt-1"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold small text-dark-blue" data-translate="upload-spec1-title">推奨解像度・品質</h6>
+                        <p class="text-muted text-xs mb-0" data-translate="upload-spec1-desc">For accurate Gemini AI recognition of text, signatures, and stamps, clear scanned images at 300dpi or higher are recommended.</p>
+                    </div>
+                </div>
+                
+                <div class="guideline-item d-flex">
+                    <i class="fa-solid fa-check text-success me-2 mt-1"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold small text-dark-blue" data-translate="upload-spec2-title">対応ファイル形式</h6>
+                        <p class="text-muted text-xs mb-0" data-translate="upload-spec2-desc">PDF (.pdf), PNG (.png), JPEG (.jpg, .jpeg) の3フォーマットを処理可能です。</p>
+                    </div>
+                </div>
+
+                <div class="guideline-item d-flex">
+                    <i class="fa-solid fa-check text-success me-2 mt-1"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold small text-dark-blue" data-translate="upload-spec3-title">AWS & S3 ストレージ連携</h6>
+                        <p class="text-muted text-xs mb-0" data-translate="upload-spec3-desc">アップロードされたバイナリは即座に暗号化の上、クラウドバケットの `raw-ingest/` ディレクトリへセキュアにアーカイブされます。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 p-3 bg-light rounded border text-muted text-xs" data-translate="upload-security-text">
+                <i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> 
+                <strong>セキュリティ通知:</strong> アップロードされたデータは、弊社のエンタープライズ情報セキュリティ基本方針に基づいて暗号化保護され、無関係なサードパーティには開示されません。
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload History List -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border rounded shadow-sm p-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark-blue mb-0" data-translate="upload-history-title">新規取り込み文書一覧</h5>
+                <button class="btn btn-outline-primary btn-sm fw-medium" onclick="loadDocuments()" data-translate="upload-history-refresh">
+                    <i class="fa-solid fa-rotate me-1"></i> 最新に更新
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table custom-table-enterprise align-middle">
+                    <thead>
+                        <tr>
+                            <th data-translate="upload-th-id">文書ID</th>
+                            <th data-translate="upload-th-name">ファイル名</th>
+                            <th data-translate="upload-th-time">登録日時</th>
+                            <th data-translate="upload-th-s3">S3アップロード</th>
+                            <th data-translate="upload-th-ai">AI解析結果</th>
+                            <th data-translate="upload-th-status">パイプライン状態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="document-table-body">
+                        <!-- Loaded via JS -->
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4" data-translate="status-loading-recent">
+                                <i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> データを読み込み中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

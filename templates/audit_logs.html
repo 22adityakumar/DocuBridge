@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs | DocuBridge{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h2 class="fw-bold text-dark-blue mb-1" data-translate="logs-header">システム監査・実行ログ</h2>
+        <p class="text-muted small mb-0" data-translate="logs-subheader">ドキュメントアップロードからGemini AIによる解析・格納までの全実行ステップのトレーサビリティ履歴です。</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary btn-sm fw-medium" onclick="fetchAuditLogs()" data-translate="logs-btn-reload">
+            <i class="fa-solid fa-rotate me-1"></i> 再読み込み
+        </button>
+        <button class="btn btn-primary btn-sm fw-medium" onclick="window.print()" data-translate="analytics-btn-print">
+            <i class="fa-solid fa-print me-1"></i> 帳票印刷
+        </button>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card border rounded shadow-sm p-4 bg-white mb-4">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label text-muted small fw-medium" data-translate="logs-filter-keyword">キーワード検索</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="log-search" class="form-control border-start-0" placeholder="ファイル名、メッセージ等で絞り込み..." onkeyup="filterLogs()" data-translate="logs-filter-placeholder">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label text-muted small fw-medium" data-translate="logs-filter-level">ログレベル</label>
+            <select class="form-select" id="log-level-filter" onchange="filterLogs()">
+                <option value="ALL" data-translate="logs-level-all">すべて表示</option>
+                <option value="INFO">INFO（正常）</option>
+                <option value="WARNING">WARNING（警告）</option>
+                <option value="ERROR">ERROR（障害）</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label text-muted small fw-medium" data-translate="logs-filter-stage">実行パイプライン工程</label>
+            <select class="form-select" id="log-stage-filter" onchange="filterLogs()">
+                <option value="ALL" data-translate="logs-stage-all">すべての工程</option>
+                <option value="UPLOAD">UPLOAD（受信）</option>
+                <option value="S3_UPLOAD">S3_UPLOAD（格納）</option>
+                <option value="GEMINI_PROCESS">GEMINI_PROCESS（解析）</option>
+                <option value="DB_WRITE">DB_WRITE（書込）</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary w-100 fw-medium" onclick="resetFilters()" data-translate="logs-btn-reset">
+                フィルター解除
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Log Grid Card -->
+<div class="card border rounded shadow-sm p-4 bg-white">
+    <div class="table-responsive">
+        <table class="table custom-table-enterprise align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 80px;" data-translate="logs-th-id">ログID</th>
+                    <th style="width: 120px;" data-translate="logs-th-level">ログレベル</th>
+                    <th style="width: 150px;" data-translate="logs-th-stage">実行工程</th>
+                    <th style="width: 110px;" data-translate="logs-th-docid">文書ID</th>
+                    <th data-translate="logs-th-message">ログメッセージ</th>
+                    <th style="width: 200px;" data-translate="logs-th-time">記録日時</th>
+                </tr>
+            </thead>
+            <tbody id="audit-log-table-body">
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4" data-translate="status-loading-logs">
+                        <i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> 監査ログを取得しています...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchAuditLogs();
+    });
+
+    let originalLogs = [];
+
+    function fetchAuditLogs() {
+        const tableBody = document.getElementById("audit-log-table-body");
+        if (!tableBody) return;
+
+        fetch('/api/logs')
+            .then(res => res.json())
+            .then(data => {
+                originalLogs = data;
+                renderLogs(data);
+            })
+            .catch(err => {
+                console.error("Error loading audit logs:", err);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger py-4">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i> ログデータの取得に失敗しました。
+                        </td>
+                    </tr>
+                `;
+            });
+    }
+
+    function renderLogs(logsList) {
+        const tableBody = document.getElementById("audit-log-table-body");
+        tableBody.innerHTML = "";
+
+        const lang = localStorage.getItem("app_language") || "ja";
+
+        if (logsList.length === 0) {
+            const noLogsMsg = getTranslation("status-no-logs", lang);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        ${noLogsMsg}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        logsList.forEach(log => {
+            const levelClass = log.level.toLowerCase() === 'error' ? 'failed' : 
+                               log.level.toLowerCase() === 'warning' ? 'pending' : 'info';
+            
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="fw-semibold text-xs text-muted">#${log.id}</td>
+                <td><span class="badge-status ${levelClass}">${log.level}</span></td>
+                <td><code class="small text-primary fw-medium">${log.stage}</code></td>
+                <td>${log.document_id ? `#${log.document_id}` : '<span class="text-muted">-</span>'}</td>
+                <td class="text-start text-xs">${escapeHtml(log.message)}</td>
+                <td class="text-muted text-xs">${new Date(log.timestamp).toLocaleString(lang === 'ja' ? 'ja-JP' : lang === 'hi' ? 'hi-IN' : 'en-US')}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function filterLogs() {
+        const searchVal = document.getElementById("log-search").value.toLowerCase();
+        const levelVal = document.getElementById("log-level-filter").value;
+        const stageVal = document.getElementById("log-stage-filter").value;
+
+        const filtered = originalLogs.filter(log => {
+            const matchesSearch = log.message.toLowerCase().includes(searchVal) || 
+                                  log.stage.toLowerCase().includes(searchVal) ||
+                                  (log.document_id && String(log.document_id).includes(searchVal));
+            
+            const matchesLevel = levelVal === 'ALL' || log.level === levelVal;
+            const matchesStage = stageVal === 'ALL' || log.stage === stageVal;
+
+            return matchesSearch && matchesLevel && matchesStage;
+        });
+
+        renderLogs(filtered);
+    }
+
+    function resetFilters() {
+        document.getElementById("log-search").value = "";
+        document.getElementById("log-level-filter").value = "ALL";
+        document.getElementById("log-stage-filter").value = "ALL";
+        renderLogs(originalLogs);
+    }
+</script>
+{% endblock %}
